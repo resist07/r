@@ -81,7 +81,7 @@ function openModal(id) {
   el('mName').textContent = p.name;
   el('mDesc').textContent = p.description;
   el('mCarton').textContent = p.cartonQty + ' ' + p.unit;
-  el('mPrice').textContent = '$' + p.price.toFixed(2);
+  el('mPrice').textContent = 'A$' + p.price.toFixed(2);
   el('mQty').value = 1;
   el('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -107,7 +107,7 @@ function cardHTML(p) {
         <div class="product-name">${p.name}</div>
         <div class="product-qty">${p.cartonQty} ${p.unit}</div>
         <div class="product-price-row">
-          <span class="product-price">$${p.price.toFixed(2)}</span>
+          <span class="product-price">A$${p.price.toFixed(2)}</span>
           <span class="product-per">/ carton</span>
         </div>
         <button class="product-buy" onclick="openModal(${p.id})">Buy Now</button>
@@ -145,7 +145,7 @@ function renderCart() {
         </div>
       </div>
       <div class="cart-right">
-        <span class="cart-item-total">$${(item.price * item.qty).toFixed(2)}</span>
+        <span class="cart-item-total">A$${(item.price * item.qty).toFixed(2)}</span>
         <button class="cart-remove" onclick="cartRemove(${item.id})">✕ Remove</button>
       </div>
     </div>`).join('');
@@ -153,9 +153,9 @@ function renderCart() {
   const sub = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const ship = sub >= 500 ? 0 : 29.95;
   const total = sub + ship;
-  document.getElementById('sumSub').textContent = '$' + sub.toFixed(2);
-  document.getElementById('sumShip').textContent = ship === 0 ? 'FREE' : '$' + ship.toFixed(2);
-  document.getElementById('sumTotal').textContent = '$' + total.toFixed(2);
+  document.getElementById('sumSub').textContent = 'A$' + sub.toFixed(2);
+  document.getElementById('sumShip').textContent = ship === 0 ? 'FREE' : 'A$' + ship.toFixed(2);
+  document.getElementById('sumTotal').textContent = 'A$' + total.toFixed(2);
 }
 function cqChange(id, d) {
   const cart = getCart();
