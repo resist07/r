@@ -89,6 +89,10 @@ function getProduct(id) {
 function productImageSVG(product) {
   const style = CATEGORY_STYLES[product.category] || { from: "#5b6b82", to: "#33405a" };
   const gid = `g-${product.id}`;
+  const hid = `h-${product.id}`;
+  const badge = `${product.unitsPerCase} ${product.unitLabel} / case`;
+  const badgeW = Math.min(300, Math.round(badge.length * 9.2 + 40));
+  const badgeX = Math.round((400 - badgeW) / 2);
   return `
     <svg class="product-photo" viewBox="0 0 400 300" role="img"
          aria-label="${product.name}" preserveAspectRatio="xMidYMid slice">
@@ -97,14 +101,22 @@ function productImageSVG(product) {
           <stop offset="0" stop-color="${style.from}" />
           <stop offset="1" stop-color="${style.to}" />
         </linearGradient>
+        <radialGradient id="${hid}" cx="32%" cy="24%" r="80%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.38" />
+          <stop offset="55%" stop-color="#ffffff" stop-opacity="0" />
+        </radialGradient>
       </defs>
       <rect width="400" height="300" fill="url(#${gid})" />
-      <circle cx="330" cy="60" r="120" fill="#ffffff" opacity="0.08" />
-      <circle cx="70" cy="250" r="90" fill="#ffffff" opacity="0.07" />
-      <text x="200" y="158" text-anchor="middle" font-size="118"
+      <circle cx="332" cy="60" r="118" fill="#ffffff" opacity="0.08" />
+      <circle cx="64" cy="252" r="92" fill="#ffffff" opacity="0.06" />
+      <rect width="400" height="300" fill="url(#${hid})" />
+      <circle cx="200" cy="130" r="80" fill="#ffffff" opacity="0.13" />
+      <text x="200" y="146" text-anchor="middle" font-size="104"
             dominant-baseline="middle">${product.emoji}</text>
-      <text x="200" y="250" text-anchor="middle" fill="#ffffff" opacity="0.92"
-            font-family="system-ui, sans-serif" font-size="20" font-weight="600"
-            letter-spacing="0.5">${product.unitsPerCase} ${product.unitLabel} / case</text>
+      <rect x="${badgeX}" y="232" width="${badgeW}" height="34" rx="17"
+            fill="#0c2244" opacity="0.4" />
+      <text x="200" y="250" text-anchor="middle" fill="#ffffff"
+            font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700"
+            dominant-baseline="middle" letter-spacing="0.3">${badge}</text>
     </svg>`;
 }

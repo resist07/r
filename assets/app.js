@@ -75,6 +75,83 @@ function stepper(id, qty, opts = {}) {
     </div>`;
 }
 
+// ──────────────── reusable page sections ───────────────────
+
+/** A small grid of product "photos" used as decorative artwork. */
+function tileCluster(ids, cls) {
+  return `<div class="${cls}" aria-hidden="true">${ids
+    .map((id) => `<div class="art-tile">${productImageSVG(getProduct(id))}</div>`)
+    .join("")}</div>`;
+}
+
+/** Headline numbers — reused on the home and about pages. */
+function statsBand() {
+  return `
+    <section class="stats">
+      <div class="container stats-grid">
+        <div class="stat"><span class="stat-num">12+</span><span class="stat-label">Years supplying trade</span></div>
+        <div class="stat"><span class="stat-num">500+</span><span class="stat-label">Products in stock</span></div>
+        <div class="stat"><span class="stat-num">3,000+</span><span class="stat-label">Businesses &amp; households served</span></div>
+        <div class="stat"><span class="stat-num">Next-day</span><span class="stat-label">Dispatch on stock items</span></div>
+      </div>
+    </section>`;
+}
+
+/** "Who we serve" — speaks to both business and individual buyers. */
+function audienceSection() {
+  return `
+    <section class="audience">
+      <div class="container">
+        <div class="section-head center">
+          <div>
+            <h2>One supplier, two kinds of customer</h2>
+            <p class="section-sub">Whether you're restocking a business or stocking up at home, you buy at the same honest wholesale prices — no membership required.</p>
+          </div>
+        </div>
+        <div class="audience-grid">
+          <article class="audience-card biz">
+            <span class="aud-ic">🏢</span>
+            <h3>For your business</h3>
+            <p>Dependable bulk supply for shops, cafés, offices, gyms and facilities.</p>
+            <ul>
+              <li>Case and pallet quantities</li>
+              <li>Transparent per-unit pricing</li>
+              <li>Consistent stock for easy reordering</li>
+              <li>Scheduled bulk delivery</li>
+            </ul>
+            <a class="btn btn-primary" href="#/catalog">Shop wholesale →</a>
+          </article>
+          <article class="audience-card ind">
+            <span class="aud-ic">🏠</span>
+            <h3>For individuals &amp; households</h3>
+            <p>Buy by the case and save — open to everyone, with simple online checkout.</p>
+            <ul>
+              <li>No business account needed</li>
+              <li>Great for families, events &amp; meal prep</li>
+              <li>The same wholesale prices as trade</li>
+              <li>Delivered to your door</li>
+            </ul>
+            <a class="btn btn-outline" href="#/catalog">Start shopping →</a>
+          </article>
+        </div>
+      </div>
+    </section>`;
+}
+
+/** Closing call-to-action band. */
+function ctaBand() {
+  return `
+    <section class="cta-band">
+      <div class="container cta-inner">
+        <div>
+          <h2>Ready to stock up?</h2>
+          <p>Fill a cart by the case and check out in minutes — business or personal.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="#/catalog">Start an order →</a>
+      </div>
+    </section>`;
+}
+
 // ───────────────────────── views ───────────────────────────
 
 function homeView() {
@@ -107,14 +184,9 @@ function homeView() {
       </div>
     </section>
 
-    <section class="value-strip">
-      <div class="container value-grid">
-        <div class="value"><span class="value-ic">📦</span><h3>Buy by the case</h3><p>Every product ships as a full carton — clear case counts, no guesswork.</p></div>
-        <div class="value"><span class="value-ic">🏷️</span><h3>Wholesale pricing</h3><p>Trade-level prices with the per-unit cost shown on every item.</p></div>
-        <div class="value"><span class="value-ic">🚚</span><h3>Fast bulk delivery</h3><p>Pallet and parcel shipping built for restocking on schedule.</p></div>
-        <div class="value"><span class="value-ic">🤝</span><h3>Business or personal</h3><p>Open to registered businesses and individual bulk buyers alike.</p></div>
-      </div>
-    </section>
+    ${statsBand()}
+
+    ${audienceSection()}
 
     <section class="featured" id="featured">
       <div class="container">
@@ -132,15 +204,86 @@ function homeView() {
       </div>
     </section>
 
-    <section class="cta-band">
-      <div class="container cta-inner">
-        <div>
-          <h2>Ready to stock up?</h2>
-          <p>Fill a cart by the case and check out in minutes.</p>
-        </div>
-        <a class="btn btn-light btn-lg" href="#/catalog">Start an order →</a>
+    <section class="value-strip">
+      <div class="container value-grid">
+        <div class="value"><span class="value-ic">📦</span><h3>Buy by the case</h3><p>Every product ships as a full carton — clear case counts, no guesswork.</p></div>
+        <div class="value"><span class="value-ic">🏷️</span><h3>Wholesale pricing</h3><p>Trade-level prices with the per-unit cost shown on every item.</p></div>
+        <div class="value"><span class="value-ic">🚚</span><h3>Fast bulk delivery</h3><p>Pallet and parcel shipping built for restocking on schedule.</p></div>
+        <div class="value"><span class="value-ic">✅</span><h3>Quality you can trust</h3><p>Curated, well-known lines and a satisfaction guarantee on every order.</p></div>
       </div>
-    </section>`;
+    </section>
+
+    <section class="about-teaser">
+      <div class="container about-teaser-inner">
+        ${tileCluster(["spring-water", "chocolate-bars", "paper-towels", "instant-coffee"], "about-teaser-art")}
+        <div class="about-teaser-copy">
+          <span class="eyebrow eyebrow-dark">About us</span>
+          <h2>A wholesale partner you can rely on</h2>
+          <p>For over a decade Northgate Wholesale has helped businesses and households
+             buy everyday essentials by the case — at fair, transparent prices, with
+             stock you can count on and service that treats every order seriously.</p>
+          <a class="btn btn-primary" href="#/about">Read our story →</a>
+        </div>
+      </div>
+    </section>
+
+    ${ctaBand()}`;
+}
+
+function aboutView() {
+  return `
+    <section class="about-hero">
+      <div class="container">
+        <span class="eyebrow">About Northgate Wholesale</span>
+        <h1>Bulk supply, done honestly.</h1>
+        <p class="about-lead">We're a wholesale distributor on a simple mission: help
+           businesses and individuals buy quality, everyday products by the case — at
+           fair prices, with stock you can rely on.</p>
+        <div class="hero-actions">
+          <a class="btn btn-light btn-lg" href="#/catalog">Browse the catalog →</a>
+        </div>
+      </div>
+    </section>
+
+    ${statsBand()}
+
+    <section class="page">
+      <div class="container about-story">
+        ${tileCluster(["olive-oil", "cola-classic", "laundry-detergent", "mixed-nuts"], "about-story-art")}
+        <div class="about-story-copy">
+          <h2>Our story</h2>
+          <p>Northgate Wholesale started with a frustration shared by shopkeepers and
+             families alike: buying in bulk was supposed to be cheaper and simpler, yet
+             it usually meant memberships, minimums and prices that were anything but
+             clear. We set out to fix that.</p>
+          <p>Today we supply a curated range of beverages, snacks, pantry staples and
+             household essentials — all sold by the full case, all with the per-unit
+             price shown up front. The same honest pricing is open to a national retail
+             chain and a household stocking up for the month. No games, no fine print.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-values">
+      <div class="container">
+        <div class="section-head center">
+          <div>
+            <h2>What we stand for</h2>
+            <p class="section-sub">The principles behind every case we ship.</p>
+          </div>
+        </div>
+        <div class="value-grid">
+          <div class="value"><span class="value-ic">🏷️</span><h3>Fair, transparent pricing</h3><p>Real wholesale prices with the per-unit cost shown on every product.</p></div>
+          <div class="value"><span class="value-ic">📦</span><h3>Reliable supply</h3><p>Consistent stock and clear case counts so reordering is effortless.</p></div>
+          <div class="value"><span class="value-ic">✅</span><h3>Quality first</h3><p>Curated, trusted lines and a satisfaction guarantee on every order.</p></div>
+          <div class="value"><span class="value-ic">🤝</span><h3>Service that cares</h3><p>Real people who treat a household order as seriously as a pallet.</p></div>
+        </div>
+      </div>
+    </section>
+
+    ${audienceSection()}
+
+    ${ctaBand()}`;
 }
 
 function catalogView() {
@@ -403,6 +546,7 @@ function renderApp() {
   switch (name) {
     case "home":       html = homeView(); break;
     case "catalog":    html = catalogView(); break;
+    case "about":      html = aboutView(); break;
     case "product":    html = productView(param); break;
     case "cart":       html = cartView(); break;
     case "checkout":   html = checkoutView(); break;
@@ -412,7 +556,7 @@ function renderApp() {
   app.innerHTML = html;
 
   // Reflect the active section in the header nav.
-  const navKey = name === "home" ? "home" : name === "catalog" ? "catalog" : "";
+  const navKey = ["home", "catalog", "about"].includes(name) ? name : "";
   document.querySelectorAll(".main-nav a").forEach((a) => {
     a.classList.toggle("is-active", a.dataset.nav === navKey);
   });
