@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Catalog — BulkMart Wholesale</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────── -->
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">BM</div>
+      <span>Bulk<em>Mart</em></span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="catalog.html" class="active">Catalog</a>
+      <a href="index.html#why">Why Us</a>
+      <a href="index.html#footer-contact">Contact</a>
+    </nav>
+    <div class="header-right">
+      <a href="cart.html" class="cart-link">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        View Cart
+        <span class="badge" id="cartBadge">0</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ── CATALOG HERO ────────────────────────────── -->
+<main class="page">
+  <div class="catalog-hero">
+    <div class="catalog-hero-inner">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        Catalog
+      </div>
+      <h1>Product Catalog</h1>
+      <p>Browse our full range of wholesale products — click any item to view details and add to cart.</p>
+    </div>
+  </div>
+
+  <!-- ── CATALOG CONTENT ──────────────────────── -->
+  <div class="section">
+    <!-- Category Filters -->
+    <div class="filters">
+      <button class="filter-btn active" data-cat="All" onclick="filterProducts('All')">All Products</button>
+      <button class="filter-btn" data-cat="Beverages" onclick="filterProducts('Beverages')">☕ Beverages</button>
+      <button class="filter-btn" data-cat="Pantry" onclick="filterProducts('Pantry')">🫙 Pantry</button>
+      <button class="filter-btn" data-cat="Snacks" onclick="filterProducts('Snacks')">🥜 Snacks</button>
+      <button class="filter-btn" data-cat="Cooking" onclick="filterProducts('Cooking')">🍳 Cooking</button>
+      <button class="filter-btn" data-cat="Baking" onclick="filterProducts('Baking')">🌾 Baking</button>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="product-grid" id="catalogGrid">
+      <!-- Populated by script.js -->
+    </div>
+  </div>
+
+  <!-- ── WHOLESALE NOTES ──────────────────────── -->
+  <div class="section" style="padding-top:0">
+    <div class="cta-banner">
+      <h2>Need a Custom Order?</h2>
+      <p>Looking for a product not listed here, or want to place a large bulk order? Our team is ready to help with custom quotes and special sourcing.</p>
+      <a href="mailto:orders@bulkmart.com" class="btn btn-accent btn-lg">Get a Custom Quote</a>
+    </div>
+  </div>
+</main>
+
+<!-- ── FOOTER ──────────────────────────────────── -->
+<footer class="footer">
+  <div class="footer-main">
+    <div class="footer-brand">
+      <div class="logo" style="margin-bottom:14px">
+        <div class="logo-mark">BM</div>
+        <span style="color:#fff">Bulk<em>Mart</em></span>
+      </div>
+      <p>Your trusted wholesale partner for premium food and beverage products. Serving restaurants, hotels, retailers, and businesses of all sizes since 2019.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Shop</h4>
+      <a href="catalog.html">Full Catalog</a>
+      <a href="catalog.html">Beverages</a>
+      <a href="catalog.html">Pantry</a>
+      <a href="catalog.html">Snacks</a>
+      <a href="catalog.html">Cooking</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About Us</a>
+      <a href="#">Our Story</a>
+      <a href="#">Careers</a>
+      <a href="#">Press</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <a href="mailto:orders@bulkmart.com">orders@bulkmart.com</a>
+      <a href="tel:+18005551234">1-800-555-1234</a>
+      <a href="#">Mon–Fri, 8am–6pm EST</a>
+      <a href="#">Live Chat</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 BulkMart Wholesale. All rights reserved.</span>
+    <span><a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a></span>
+  </div>
+</footer>
+
+<!-- ── MODAL ───────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-left" id="mFace">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <span id="mEmoji" style="filter:drop-shadow(0 8px 20px rgba(0,0,0,0.3))"></span>
+    </div>
+    <div class="modal-right">
+      <span class="modal-cat" id="mCat"></span>
+      <h2 class="modal-name" id="mName"></h2>
+      <p class="modal-desc" id="mDesc"></p>
+      <div class="modal-carton-box">
+        <span class="icon">📦</span>
+        <div>
+          <strong id="mCarton"></strong>
+          <span>Sold by the carton only · Minimum 1 carton</span>
+        </div>
+      </div>
+      <div class="modal-price-row">
+        <span class="modal-price" id="mPrice"></span>
+        <span class="modal-price-label">per carton</span>
+      </div>
+      <div>
+        <div class="qty-label">Number of Cartons</div>
+        <div class="qty-wrap">
+          <button class="qty-btn" id="qtyMinus">−</button>
+          <input type="number" class="qty-num" id="mQty" value="1" min="1">
+          <button class="qty-btn" id="qtyPlus">+</button>
+        </div>
+      </div>
+      <button class="modal-add" id="modalAddBtn">Add to Cart</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ───────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
