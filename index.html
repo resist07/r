@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Northgate Wholesale — Bulk Supply for Business</title>
+  <meta name="description" content="Northgate Wholesale — quality products sold by the case at wholesale prices. Order in bulk online. Trade accounts and individuals welcome." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <!-- Persistent header: brand, navigation, and always-visible cart -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#/" class="brand" aria-label="Northgate Wholesale home">
+        <span class="brand-mark" aria-hidden="true">📦</span>
+        <span class="brand-text">Northgate<strong>Wholesale</strong></span>
+      </a>
+
+      <nav class="main-nav" aria-label="Primary">
+        <a href="#/" data-nav="home">Home</a>
+        <a href="#/catalog" data-nav="catalog">Catalog</a>
+      </nav>
+
+      <a href="#/cart" class="cart-button" aria-label="View your cart">
+        <svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2.5 3.5h2.2l1 2m0 0 2 8.4h9.1l2.1-7.4H6.7Zm2.7 14.8a1.3 1.3 0 1 0 2.6 0 1.3 1.3 0 0 0-2.6 0Zm9.4 0a1.3 1.3 0 1 0 2.6 0 1.3 1.3 0 0 0-2.6 0Z" />
+        </svg>
+        <span class="cart-label">Cart</span>
+        <span class="cart-count" id="cart-count" data-empty="true">0</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Single-page app views are rendered here by the router -->
+  <main id="app"></main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark" aria-hidden="true">📦</span>
+        <span class="brand-text">Northgate<strong>Wholesale</strong></span>
+        <p class="footer-tagline">Bulk supply for business — sold by the case, priced for trade.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer">
+        <a href="#/">Home</a>
+        <a href="#/catalog">Full Catalog</a>
+        <a href="#/cart">Cart</a>
+      </nav>
+      <p class="footer-legal">
+        © <span id="year"></span> Northgate Wholesale. Demo storefront — no real payments are processed.
+      </p>
+    </div>
+  </footer>
+
+  <script src="assets/products.js"></script>
+  <script src="assets/cart.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
