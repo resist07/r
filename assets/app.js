@@ -427,7 +427,7 @@ function checkoutView() {
             <h2>Order summary</h2>
             <div class="co-lines">${summary}</div>
             <div class="sum-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
-            <div class="sum-row muted"><span>Shipping</span><span>Free over 10 cases</span></div>
+            <div class="sum-row muted"><span>Shipping</span><span>${subtotal >= FREE_SHIP_TOTAL ? "Free" : "Free over $1,000"}</span></div>
             <div class="sum-row total"><span>Total due</span><span>${money(subtotal)}</span></div>
             <button type="submit" class="btn btn-primary btn-lg btn-block">Place order · ${money(subtotal)}</button>
             <p class="secure-note">🔒 Your details are not stored — demo checkout.</p>
@@ -487,16 +487,16 @@ function notFoundView() {
 
 // ─────────────── mini-cart drawer + buy funnel ─────────────
 
-const FREE_SHIP_CASES = 10; // free delivery threshold
+const FREE_SHIP_TOTAL = 1000; // free delivery once the order subtotal reaches this
 
 /** Free-delivery progress nudge body, shared by the drawer and the cart page. */
 function shipNudgeInner() {
-  const count = Cart.count();
-  if (!count) return "";
-  const remaining = Math.max(0, FREE_SHIP_CASES - count);
-  const pct = Math.min(100, (count / FREE_SHIP_CASES) * 100);
+  const subtotal = Cart.subtotal();
+  if (subtotal <= 0) return "";
+  const remaining = Math.max(0, FREE_SHIP_TOTAL - subtotal);
+  const pct = Math.min(100, (subtotal / FREE_SHIP_TOTAL) * 100);
   const msg = remaining > 0
-    ? `Add <strong>${remaining}</strong> more case${remaining === 1 ? "" : "s"} for <strong>free delivery</strong>`
+    ? `Spend <strong>${money(remaining)}</strong> more for <strong>free delivery</strong>`
     : `✓ You've unlocked <strong>free delivery</strong>`;
   return `${msg}<div class="nudge-bar"><div class="nudge-fill" style="width:${pct}%"></div></div>`;
 }
