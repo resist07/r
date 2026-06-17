@@ -36,6 +36,13 @@ runs anywhere with no build step and the cart persists in the browser.
   Everything is tuned for 60fps (rAF, GPU-only transforms, capped particle
   counts, paused when off-screen/hidden) and disabled under reduced-motion or on
   touch where appropriate.
+- **High-end look**: a champagne-gold-on-ink palette, an elegant serif display
+  face (Fraunces) over Inter, warm cream surfaces, and gold reserved
+  consistently for the purchase action so the eye is trained toward buying.
+- **Buy funnel**: a slide-in mini-cart that pops on every "Add to cart" with a
+  prominent Checkout CTA, a free-delivery progress nudge, a sticky add-to-cart
+  bar on product pages, and a "Shop catalog" button that reveals in the header
+  as you scroll — keeping checkout one tap away from anywhere.
 
 ## Project structure
 

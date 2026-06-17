@@ -162,8 +162,8 @@
             const dy = a.y - b.y;
             const d2 = dx * dx + dy * dy;
             if (d2 < D * D) {
-              const alpha = (1 - Math.sqrt(d2) / D) * 0.22;
-              ctx.strokeStyle = "rgba(180,210,255," + alpha + ")";
+              const alpha = (1 - Math.sqrt(d2) / D) * 0.2;
+              ctx.strokeStyle = "rgba(200,172,116," + alpha + ")";
               ctx.lineWidth = 1;
               ctx.beginPath();
               ctx.moveTo(a.x, a.y);
@@ -181,8 +181,8 @@
             const dy = a.y - m.y;
             const d2 = dx * dx + dy * dy;
             if (d2 < MD * MD) {
-              const alpha = (1 - Math.sqrt(d2) / MD) * 0.5;
-              ctx.strokeStyle = "rgba(245,200,120," + alpha + ")"; // warm accent near cursor
+              const alpha = (1 - Math.sqrt(d2) / MD) * 0.55;
+              ctx.strokeStyle = "rgba(216,195,154," + alpha + ")"; // champagne near cursor
               ctx.lineWidth = 1;
               ctx.beginPath();
               ctx.moveTo(a.x, a.y);
@@ -193,7 +193,7 @@
         }
       }
 
-      ctx.fillStyle = "rgba(225,238,255,0.85)";
+      ctx.fillStyle = "rgba(235,224,201,0.85)";
       for (let i = 0; i < n; i++) {
         const p = parts[i];
         ctx.beginPath();

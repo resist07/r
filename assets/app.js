@@ -300,6 +300,19 @@ function productView(id) {
             <div class="product-grid">${related.map(productCard).join("")}</div>
           </div>` : ""}
       </div>
+
+      <div class="buybar" id="buybar" aria-hidden="true">
+        <div class="container buybar-inner">
+          <div class="buybar-info">
+            <span class="buybar-thumb">${productImageSVG(p)}</span>
+            <div>
+              <div class="buybar-name">${p.name}</div>
+              <div class="buybar-price"><strong>${money(p.casePrice)}</strong> / case · ${p.unitsPerCase} ${p.unitLabel}</div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-lg" data-action="add-detail" data-id="${p.id}">Add to cart</button>
+        </div>
+      </div>
     </section>`;
 }
 
@@ -345,6 +358,7 @@ function cartView() {
         </div>
         <aside class="cart-summary">
           <h2>Order summary</h2>
+          <div class="ship-nudge">${shipNudgeInner()}</div>
           <div class="sum-row"><span>Subtotal (${Cart.count()} case${Cart.count() === 1 ? "" : "s"})</span><span>${money(subtotal)}</span></div>
           <div class="sum-row muted"><span>Shipping</span><span>Calculated at checkout</span></div>
           <div class="sum-row muted"><span>Tax</span><span>Calculated at checkout</span></div>
@@ -471,6 +485,101 @@ function notFoundView() {
     </section>`;
 }
 
+// ─────────────── mini-cart drawer + buy funnel ─────────────
+
+const FREE_SHIP_CASES = 10; // free delivery threshold
+
+/** Free-delivery progress nudge body, shared by the drawer and the cart page. */
+function shipNudgeInner() {
+  const count = Cart.count();
+  if (!count) return "";
+  const remaining = Math.max(0, FREE_SHIP_CASES - count);
+  const pct = Math.min(100, (count / FREE_SHIP_CASES) * 100);
+  const msg = remaining > 0
+    ? `Add <strong>${remaining}</strong> more case${remaining === 1 ? "" : "s"} for <strong>free delivery</strong>`
+    : `✓ You've unlocked <strong>free delivery</strong>`;
+  return `${msg}<div class="nudge-bar"><div class="nudge-fill" style="width:${pct}%"></div></div>`;
+}
+
+/** Render the slide-in mini-cart contents from the current cart. */
+function renderDrawer() {
+  const itemsEl = document.getElementById("drawer-items");
+  const nudgeEl = document.getElementById("drawer-nudge");
+  const footEl = document.getElementById("drawer-foot");
+  if (!itemsEl) return;
+
+  const items = Cart.detailedItems();
+  if (!items.length) {
+    nudgeEl.innerHTML = "";
+    footEl.innerHTML = "";
+    itemsEl.innerHTML = `
+      <div class="drawer-empty">
+        <span class="empty-ic">🛒</span>
+        <p>Your cart is empty.</p>
+        <a class="btn btn-primary" href="#/catalog" data-action="close-drawer">Browse the catalog →</a>
+      </div>`;
+    return;
+  }
+
+  nudgeEl.innerHTML = shipNudgeInner();
+
+  itemsEl.innerHTML = items.map((i) => `
+    <div class="drawer-line">
+      <a class="drawer-thumb" href="#/product/${i.product.id}" data-action="close-drawer">${productImageSVG(i.product)}</a>
+      <div>
+        <a class="drawer-line-title" href="#/product/${i.product.id}" data-action="close-drawer">${i.product.name}</a>
+        <div class="drawer-line-meta">${money(i.product.casePrice)} · ${i.product.unitsPerCase} ${i.product.unitLabel}/case</div>
+        <div class="mini-stepper">
+          <button data-action="cart-dec" data-id="${i.product.id}" aria-label="Decrease quantity">−</button>
+          <span class="mini-qty">${i.qty}</span>
+          <button data-action="cart-inc" data-id="${i.product.id}" aria-label="Increase quantity">+</button>
+          <button class="mini-remove" data-action="cart-remove" data-id="${i.product.id}">Remove</button>
+        </div>
+      </div>
+      <div class="drawer-line-price">${money(i.lineTotal)}</div>
+    </div>`).join("");
+
+  footEl.innerHTML = `
+    <div class="drawer-sub"><span>Subtotal</span><span class="amt">${money(Cart.subtotal())}</span></div>
+    <p class="drawer-note">Shipping &amp; tax calculated at checkout</p>
+    <a class="btn btn-primary btn-lg btn-block" href="#/checkout" data-action="close-drawer">Checkout →</a>
+    <a class="btn btn-outline btn-block" href="#/cart" data-action="close-drawer">View full cart</a>`;
+}
+
+function openDrawer() {
+  renderDrawer();
+  const d = document.getElementById("cart-drawer");
+  d.classList.add("is-open");
+  d.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function closeDrawer() {
+  const d = document.getElementById("cart-drawer");
+  if (!d || !d.classList.contains("is-open")) return;
+  d.classList.remove("is-open");
+  d.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+// Sticky buy bar: show it once the in-page buy box scrolls away.
+let buyBarObserver = null;
+function initBuyBar() {
+  const bar = document.getElementById("buybar");
+  const box = document.querySelector(".buy-box");
+  if (buyBarObserver) { buyBarObserver.disconnect(); buyBarObserver = null; }
+  if (!bar || !box || !("IntersectionObserver" in window)) return;
+  buyBarObserver = new IntersectionObserver(
+    ([entry]) => {
+      const show = !entry.isIntersecting;
+      bar.classList.toggle("is-visible", show);
+      bar.setAttribute("aria-hidden", show ? "false" : "true");
+    },
+    { rootMargin: "0px 0px -12% 0px" }
+  );
+  buyBarObserver.observe(box);
+}
+
 // ───────────────────────── router ──────────────────────────
 
 function currentRoute() {
@@ -535,9 +644,17 @@ document.addEventListener("click", (e) => {
   const { action, id, cat } = el.dataset;
 
   switch (action) {
-    case "add": // "Add to cart" on a product card
+    case "add": // "Add to cart" on a product card → funnel into the mini-cart
       Cart.add(id, 1);
-      toast("Added 1 case to your cart");
+      openDrawer();
+      break;
+
+    case "open-drawer":
+      openDrawer();
+      break;
+
+    case "close-drawer":
+      closeDrawer();
       break;
 
     case "filter":
@@ -560,27 +677,29 @@ document.addEventListener("click", (e) => {
       const input = document.querySelector('.buy-box .step-input');
       const qty = Math.max(1, parseInt(input.value, 10) || 1);
       Cart.add(id, qty);
-      toast(`Added ${qty} case${qty === 1 ? "" : "s"} to your cart`);
+      openDrawer();
       break;
     }
 
+    // Cart mutations just update the cart; the cart:change listener re-renders
+    // the drawer and (if shown) the cart page.
     case "cart-dec":
     case "cart-inc": {
       const line = Cart.read().find((i) => i.id === id);
       const current = line ? line.qty : 1;
       Cart.setQty(id, action === "cart-inc" ? current + 1 : current - 1);
-      renderApp();
-      window.clearScrollAnimations?.(); // in-place update: drop stale triggers, don't re-animate
       break;
     }
 
     case "cart-remove":
       Cart.remove(id);
-      toast("Item removed");
-      renderApp();
-      window.clearScrollAnimations?.();
       break;
   }
+});
+
+// Close the drawer on Escape.
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeDrawer();
 });
 
 // Quantity typed directly into a number input.
@@ -594,8 +713,6 @@ document.addEventListener("change", (e) => {
     updateDetailTotals(getProduct(id));
   } else if (action === "cart-qty") {
     Cart.setQty(id, parseInt(el.value, 10) || 1);
-    renderApp();
-    window.clearScrollAnimations?.();
   }
 });
 
@@ -629,30 +746,39 @@ document.addEventListener("submit", (e) => {
   location.hash = "#/confirmation";
 });
 
-// Keep the header badge in sync whenever the cart changes.
+// Keep everything in sync whenever the cart changes.
 document.addEventListener("cart:change", () => {
   updateCartBadge();
   const btn = document.querySelector(".cart-button");
   btn.classList.remove("bump");
   void btn.offsetWidth; // restart the animation
   btn.classList.add("bump");
+  renderDrawer();
+  // Mirror changes on the full cart page if it's the active view.
+  if (currentRoute().name === "cart") {
+    renderApp();
+    window.clearScrollAnimations?.();
+  }
 });
 
 // ───────────────────────── boot ────────────────────────────
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Start/stop the hero particle field depending on the active route. */
+/** Start/stop view-specific effects (hero particles, sticky buy bar). */
 function mountRouteExtras() {
   const { name } = currentRoute();
   if (name === "home") window.HeroParticles?.mount(document.querySelector(".hero-particles"));
   else window.HeroParticles?.unmount();
+
+  if (name === "product") initBuyBar();
+  else if (buyBarObserver) { buyBarObserver.disconnect(); buyBarObserver = null; }
 }
 
 /** Swap the view, (re)bind view-specific effects, and reveal it. */
 function renderRoute() {
   window.HeroParticles?.unmount();        // stop the old hero canvas before the DOM swap
-  window.scrollTo({ top: 0, behavior: "auto" });
+  window.scrollTo({ top: 0, behavior: "instant" });
   renderApp();
   mountRouteExtras();
   window.applyScrollAnimations?.();
@@ -660,6 +786,7 @@ function renderRoute() {
 
 /** Navigate with a quick cross-fade page transition. */
 function navigate() {
+  closeDrawer();
   if (prefersReduced || !window.gsap) {
     renderRoute();
     return;
