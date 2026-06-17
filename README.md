@@ -30,6 +30,12 @@ runs anywhere with no build step and the cart persists in the browser.
   reveals. Animations are rebuilt on each navigation and respect
   `prefers-reduced-motion`; if the library is unavailable, content stays fully
   visible.
+- **Interactive motion**: a mouse-reactive particle background in the hero
+  (Canvas), 3D tilt + cursor-following glow on product cards, a sticky navbar
+  that shrinks on scroll, animated page transitions, and a loading screen.
+  Everything is tuned for 60fps (rAF, GPU-only transforms, capped particle
+  counts, paused when off-screen/hidden) and disabled under reduced-motion or on
+  touch where appropriate.
 
 ## Project structure
 
@@ -39,10 +45,16 @@ assets/
   styles.css          Design system and all component styles
   products.js         Product catalog data + SVG image generator
   cart.js             Cart state, persisted to localStorage
+  particles.js        Mouse-reactive hero particle background (Canvas)
+  interactions.js     3D card tilt + glow, shrinking sticky navbar
   animations.js       GSAP ScrollTrigger scroll animations (applied per view)
-  app.js              Hash router + views (home, catalog, product, cart, checkout)
+  app.js              Hash router + views, page transitions, loading screen
   vendor/             GSAP + ScrollTrigger (vendored locally, no CDN needed)
 ```
+
+> **Why not Framer Motion?** Framer Motion is React-only; this project is
+> intentionally a dependency-free vanilla-JS app. The same fluid results are
+> achieved with GSAP + Canvas, with no framework or build step.
 
 ## Run it locally
 

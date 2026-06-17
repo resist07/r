@@ -45,7 +45,7 @@ function toast(message) {
 /** A single product card used in the catalog grid and the featured row. */
 function productCard(p) {
   return `
-    <article class="product-card">
+    <article class="product-card tilt">
       <a class="card-media" href="#/product/${p.id}" aria-label="View ${escapeHtml(p.name)}">
         ${productImageSVG(p)}
         <span class="card-cat">${p.category}</span>
@@ -122,6 +122,7 @@ function homeView() {
 
   return `
     <section class="hero">
+      <canvas class="hero-particles" aria-hidden="true"></canvas>
       <div class="container hero-inner">
         <div class="hero-copy">
           <span class="eyebrow">Wholesale supply for business</span>
@@ -639,12 +640,58 @@ document.addEventListener("cart:change", () => {
 
 // ───────────────────────── boot ────────────────────────────
 
-window.addEventListener("hashchange", () => {
-  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Start/stop the hero particle field depending on the active route. */
+function mountRouteExtras() {
+  const { name } = currentRoute();
+  if (name === "home") window.HeroParticles?.mount(document.querySelector(".hero-particles"));
+  else window.HeroParticles?.unmount();
+}
+
+/** Swap the view, (re)bind view-specific effects, and reveal it. */
+function renderRoute() {
+  window.HeroParticles?.unmount();        // stop the old hero canvas before the DOM swap
+  window.scrollTo({ top: 0, behavior: "auto" });
   renderApp();
+  mountRouteExtras();
   window.applyScrollAnimations?.();
-});
+}
+
+/** Navigate with a quick cross-fade page transition. */
+function navigate() {
+  if (prefersReduced || !window.gsap) {
+    renderRoute();
+    return;
+  }
+  gsap.killTweensOf(app);
+  gsap.to(app, {
+    opacity: 0,
+    y: 14,
+    duration: 0.18,
+    ease: "power1.in",
+    onComplete: () => {
+      renderRoute();
+      gsap.fromTo(
+        app,
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.3, ease: "power2.out", clearProps: "transform,opacity" }
+      );
+    },
+  });
+}
+
+window.addEventListener("hashchange", navigate);
 
 document.getElementById("year").textContent = new Date().getFullYear();
-renderApp();
-window.applyScrollAnimations?.();
+renderRoute(); // initial render (no out-transition)
+
+// Loading animation: reveal the app once the page is ready, then remove the
+// overlay entirely so it can never intercept input.
+function hidePreloader() {
+  document.body.classList.add("loaded");
+  const pre = document.getElementById("preloader");
+  if (pre) setTimeout(() => pre.remove(), 600);
+}
+if (document.readyState === "complete") setTimeout(hidePreloader, 300);
+else window.addEventListener("load", () => setTimeout(hidePreloader, 300));
