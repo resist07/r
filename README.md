@@ -25,6 +25,11 @@ runs anywhere with no build step and the cart persists in the browser.
   optional company field — individuals welcome too) that places an order and
   shows a confirmation with an order number. _Demo checkout — no real payment
   is processed._
+- **Scroll animations** powered by GSAP ScrollTrigger on every section —
+  staggered reveals, hero parallax, animated stat counters and batched product
+  reveals. Animations are rebuilt on each navigation and respect
+  `prefers-reduced-motion`; if the library is unavailable, content stays fully
+  visible.
 
 ## Project structure
 
@@ -34,7 +39,9 @@ assets/
   styles.css          Design system and all component styles
   products.js         Product catalog data + SVG image generator
   cart.js             Cart state, persisted to localStorage
+  animations.js       GSAP ScrollTrigger scroll animations (applied per view)
   app.js              Hash router + views (home, catalog, product, cart, checkout)
+  vendor/             GSAP + ScrollTrigger (vendored locally, no CDN needed)
 ```
 
 ## Run it locally

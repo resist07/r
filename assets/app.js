@@ -542,6 +542,7 @@ document.addEventListener("click", (e) => {
     case "filter":
       state.catalogFilter = cat;
       renderApp();
+      window.applyScrollAnimations?.(); // re-reveal the filtered grid
       break;
 
     case "qty-dec":
@@ -568,6 +569,7 @@ document.addEventListener("click", (e) => {
       const current = line ? line.qty : 1;
       Cart.setQty(id, action === "cart-inc" ? current + 1 : current - 1);
       renderApp();
+      window.clearScrollAnimations?.(); // in-place update: drop stale triggers, don't re-animate
       break;
     }
 
@@ -575,6 +577,7 @@ document.addEventListener("click", (e) => {
       Cart.remove(id);
       toast("Item removed");
       renderApp();
+      window.clearScrollAnimations?.();
       break;
   }
 });
@@ -591,6 +594,7 @@ document.addEventListener("change", (e) => {
   } else if (action === "cart-qty") {
     Cart.setQty(id, parseInt(el.value, 10) || 1);
     renderApp();
+    window.clearScrollAnimations?.();
   }
 });
 
@@ -638,7 +642,9 @@ document.addEventListener("cart:change", () => {
 window.addEventListener("hashchange", () => {
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   renderApp();
+  window.applyScrollAnimations?.();
 });
 
 document.getElementById("year").textContent = new Date().getFullYear();
 renderApp();
+window.applyScrollAnimations?.();
