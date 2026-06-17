@@ -360,9 +360,9 @@ function cartView() {
           <h2>Order summary</h2>
           <div class="ship-nudge">${shipNudgeInner()}</div>
           <div class="sum-row"><span>Subtotal (${Cart.count()} case${Cart.count() === 1 ? "" : "s"})</span><span>${money(subtotal)}</span></div>
-          <div class="sum-row muted"><span>Shipping</span><span>Calculated at checkout</span></div>
+          <div class="sum-row"><span>Delivery</span><span>${shippingFor(subtotal) ? money(shippingFor(subtotal)) : '<span class="free-tag">Free</span>'}</span></div>
           <div class="sum-row muted"><span>Tax</span><span>Calculated at checkout</span></div>
-          <div class="sum-row total"><span>Estimated total</span><span>${money(subtotal)}</span></div>
+          <div class="sum-row total"><span>Estimated total</span><span>${money(orderTotal(subtotal))}</span></div>
           <a class="btn btn-primary btn-lg btn-block" href="#/checkout">Proceed to checkout →</a>
           <p class="secure-note">🔒 Secure checkout · demo storefront</p>
         </aside>
@@ -383,6 +383,8 @@ function checkoutView() {
       <span>${money(i.lineTotal)}</span>
     </div>`).join("");
   const subtotal = Cart.subtotal();
+  const ship = shippingFor(subtotal);
+  const total = orderTotal(subtotal);
 
   return `
     <section class="page">
@@ -427,9 +429,10 @@ function checkoutView() {
             <h2>Order summary</h2>
             <div class="co-lines">${summary}</div>
             <div class="sum-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
-            <div class="sum-row muted"><span>Shipping</span><span>${subtotal >= FREE_SHIP_TOTAL ? "Free" : "Free over $1,000"}</span></div>
-            <div class="sum-row total"><span>Total due</span><span>${money(subtotal)}</span></div>
-            <button type="submit" class="btn btn-primary btn-lg btn-block">Place order · ${money(subtotal)}</button>
+            <div class="sum-row"><span>Delivery</span><span>${ship ? money(ship) : '<span class="free-tag">Free</span>'}</span></div>
+            ${ship ? `<div class="sum-row muted free-hint"><span></span><span>Free over $${FREE_SHIP_TOTAL.toLocaleString()}</span></div>` : ""}
+            <div class="sum-row total"><span>Total due</span><span>${money(total)}</span></div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">Place order · ${money(total)}</button>
             <p class="secure-note">🔒 Your details are not stored — demo checkout.</p>
           </aside>
         </form>
@@ -467,7 +470,9 @@ function confirmationView() {
           <div class="confirm-row"><span>Order number</span><strong>${order.number}</strong></div>
           <div class="confirm-row"><span>Order date</span><span>${order.date}</span></div>
           <div class="co-lines">${lines}</div>
-          <div class="sum-row total"><span>Total paid</span><span>${money(order.subtotal)}</span></div>
+          <div class="sum-row"><span>Subtotal</span><span>${money(order.subtotal)}</span></div>
+          <div class="sum-row"><span>Delivery</span><span>${order.shipping ? money(order.shipping) : '<span class="free-tag">Free</span>'}</span></div>
+          <div class="sum-row total"><span>Total paid</span><span>${money(order.total)}</span></div>
         </div>
         <a class="btn btn-primary btn-lg" href="#/catalog">Continue shopping →</a>
       </div>
@@ -488,6 +493,17 @@ function notFoundView() {
 // ─────────────── mini-cart drawer + buy funnel ─────────────
 
 const FREE_SHIP_TOTAL = 1000; // free delivery once the order subtotal reaches this
+const SHIPPING_FEE = 49;      // flat delivery fee below the free-delivery threshold
+
+/** Delivery fee for a given subtotal (free at/above the threshold, or empty). */
+function shippingFor(subtotal) {
+  return subtotal > 0 && subtotal < FREE_SHIP_TOTAL ? SHIPPING_FEE : 0;
+}
+
+/** Order total = subtotal + delivery. */
+function orderTotal(subtotal) {
+  return subtotal + shippingFor(subtotal);
+}
 
 /** Free-delivery progress nudge body, shared by the drawer and the cart page. */
 function shipNudgeInner() {
@@ -541,7 +557,7 @@ function renderDrawer() {
 
   footEl.innerHTML = `
     <div class="drawer-sub"><span>Subtotal</span><span class="amt">${money(Cart.subtotal())}</span></div>
-    <p class="drawer-note">Shipping &amp; tax calculated at checkout</p>
+    <p class="drawer-note">Delivery ${shippingFor(Cart.subtotal()) ? `<strong>${money(SHIPPING_FEE)}</strong> · free over $${FREE_SHIP_TOTAL.toLocaleString()}` : `<strong class="free-tag">free</strong>`} · taxes at checkout</p>
     <a class="btn btn-primary btn-lg btn-block" href="#/checkout" data-action="close-drawer">Checkout →</a>
     <a class="btn btn-outline btn-block" href="#/cart" data-action="close-drawer">View full cart</a>`;
 }
@@ -732,6 +748,8 @@ document.addEventListener("submit", (e) => {
     qty: i.qty,
     lineTotal: i.lineTotal,
   }));
+  const subtotal = Cart.subtotal();
+  const shipping = shippingFor(subtotal);
 
   state.lastOrder = {
     number: "NW-" + Date.now().toString(36).toUpperCase().slice(-6) + "-" + Math.floor(Math.random() * 900 + 100),
@@ -739,7 +757,9 @@ document.addEventListener("submit", (e) => {
     name: data.get("name"),
     email: data.get("email"),
     items,
-    subtotal: Cart.subtotal(),
+    subtotal,
+    shipping,
+    total: subtotal + shipping,
   };
 
   Cart.clear();

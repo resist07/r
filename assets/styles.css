@@ -434,6 +434,9 @@ img, svg { display: block; max-width: 100%; }
 .sum-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.45rem 0; }
 .sum-row.muted { color: var(--muted); font-size: 0.9rem; }
 .sum-row.total { border-top: 1px solid var(--line); margin-top: 0.4rem; padding-top: 0.9rem; font-weight: 800; font-size: 1.15rem; color: var(--brand-dark); }
+.sum-row.total span:last-child { font-family: var(--font-display); }
+.sum-row.free-hint { padding-top: 0; margin-top: -0.2rem; font-size: 0.78rem; }
+.free-tag { color: var(--accent-dark); font-weight: 700; }
 .cart-summary .btn-block { margin-top: 1rem; }
 .secure-note { text-align: center; color: var(--muted); font-size: 0.82rem; margin: 0.8rem 0 0; }
 
