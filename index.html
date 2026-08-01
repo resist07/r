@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy National Girlfriend Day, Ella Jade 💕</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    font-family: 'Quicksand', sans-serif;
+    background: linear-gradient(135deg, #ffe3ec 0%, #ffd1dc 40%, #ffc4d6 70%, #ffb3c6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* floating hearts background */
+  .heart-bg {
+    position: fixed;
+    bottom: -10vh;
+    font-size: 22px;
+    opacity: 0;
+    animation: floatUp linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10%  { opacity: .6; }
+    90%  { opacity: .4; }
+    100% { transform: translateY(-115vh) rotate(25deg); opacity: 0; }
+  }
+
+  .card {
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(214, 51, 108, 0.25);
+    padding: 56px 40px;
+    max-width: 520px;
+    width: 90%;
+    text-align: center;
+  }
+
+  .step {
+    display: none;
+    animation: fadeIn .8s ease both;
+  }
+  .step.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .emoji-big {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 18px;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.12); }
+  }
+
+  h1 {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(2.2rem, 6vw, 3.2rem);
+    color: #d6336c;
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+
+  h2 {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    color: #d6336c;
+    margin-bottom: 14px;
+  }
+
+  p {
+    font-size: 1.08rem;
+    color: #7a3b52;
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .from {
+    font-size: .95rem;
+    color: #b0688a;
+    margin-top: 10px;
+    font-weight: 600;
+    letter-spacing: .5px;
+  }
+
+  button {
+    margin-top: 28px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #f06595, #d6336c);
+    border: none;
+    border-radius: 999px;
+    padding: 14px 38px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(214, 51, 108, 0.35);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  button:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(214, 51, 108, 0.45);
+  }
+  button:active { transform: translateY(0) scale(.98); }
+
+  .dots {
+    margin-top: 26px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #f3bcd0;
+    transition: background .3s, transform .3s;
+  }
+  .dot.on { background: #d6336c; transform: scale(1.3); }
+
+  /* confetti hearts on the last step */
+  .confetti {
+    position: fixed;
+    top: -5vh;
+    font-size: 20px;
+    animation: fall linear forwards;
+    pointer-events: none;
+    z-index: 5;
+  }
+  @keyframes fall {
+    to { transform: translateY(115vh) rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Step 1 -->
+  <section class="step active">
+    <span class="emoji-big">💝</span>
+    <h1>Happy National Girlfriend Day,<br>Ella Jade</h1>
+    <p class="from">— from Om 💌</p>
+    <button onclick="next()">Continue 💕</button>
+  </section>
+
+  <!-- Step 2 -->
+  <section class="step">
+    <span class="emoji-big">🥰</span>
+    <h2>I like you.</h2>
+    <p>Like… a lot, a lot.</p>
+    <button onclick="next()">Continue 💗</button>
+  </section>
+
+  <!-- Step 3 -->
+  <section class="step">
+    <span class="emoji-big">✨</span>
+    <h2>Your eyes</h2>
+    <p>Every time I look at you, your eyes get me. I could get lost in them and honestly? I wouldn't even want directions back.</p>
+    <button onclick="next()">Continue 😍</button>
+  </section>
+
+  <!-- Step 4 -->
+  <section class="step">
+    <span class="emoji-big">😂</span>
+    <h2>You're so funny</h2>
+    <p>Nobody makes me laugh like you do. You're effortlessly hilarious, and being around you never gets old — not even for a second.</p>
+    <button onclick="next()">Continue 🤭</button>
+  </section>
+
+  <!-- Step 5 -->
+  <section class="step">
+    <span class="emoji-big">🌞</span>
+    <h2>You make my day</h2>
+    <p>No matter what kind of day I'm having, it instantly gets better the moment it has you in it. You're my favorite part of every single day.</p>
+    <button onclick="next()">One more thing… 💘</button>
+  </section>
+
+  <!-- Step 6 -->
+  <section class="step">
+    <span class="emoji-big">💖</span>
+    <h1>Happy Girlfriend Day,<br>Ella Jade</h1>
+    <p>I'm so lucky it's you.</p>
+    <p class="from">— always, Om 💕</p>
+  </section>
+
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+  const steps = document.querySelectorAll('.step');
+  const dotsWrap = document.getElementById('dots');
+  let current = 0;
+
+  steps.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' on' : '');
+    dotsWrap.appendChild(d);
+  });
+  const dots = document.querySelectorAll('.dot');
+
+  function next() {
+    steps[current].classList.remove('active');
+    dots[current].classList.remove('on');
+    current++;
+    steps[current].classList.add('active');
+    dots[current].classList.add('on');
+    if (current === steps.length - 1) confettiBurst();
+  }
+
+  // gentle floating hearts in the background
+  const heartChars = ['💗','💕','💘','💞','🩷'];
+  for (let i = 0; i < 16; i++) {
+    const h = document.createElement('div');
+    h.className = 'heart-bg';
+    h.textContent = heartChars[Math.floor(Math.random() * heartChars.length)];
+    h.style.left = Math.random() * 100 + 'vw';
+    h.style.fontSize = (14 + Math.random() * 20) + 'px';
+    h.style.animationDuration = (9 + Math.random() * 9) + 's';
+    h.style.animationDelay = (Math.random() * 10) + 's';
+    document.body.appendChild(h);
+  }
+
+  function confettiBurst() {
+    const chars = ['💖','💕','✨','🌸','💘','🩷'];
+    for (let i = 0; i < 45; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.textContent = chars[Math.floor(Math.random() * chars.length)];
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.fontSize = (14 + Math.random() * 18) + 'px';
+      c.style.animationDuration = (2.5 + Math.random() * 3) + 's';
+      c.style.animationDelay = (Math.random() * 1.5) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 7000);
+    }
+  }
+</script>
+
+</body>
+</html>
