@@ -128,6 +128,7 @@ async def set_top10(interaction: discord.Interaction,
                 "Bots can't be on the ladder.", ephemeral=True)
             return
         data["ladder"] = [m.id for m in members]
+        data["ladder_status"] = {}
         for m in members:
             core.get_player(data, m.id)
         core.save_data(data)

@@ -49,6 +49,11 @@ to enter the rankings (e.g. after a tournament). The panel has one
   **also affect Elo**.
 - Win as challenger and you **take their spot** (everyone below shifts
   down). Lose as challenger and you get a **3-day cooldown**.
+- The panel shows movement symbols next to names: 🔺 climbed a place,
+  🛡️ defended their spot, 🔻 dropped a place. Symbols reset when a ref
+  sets a fresh top 10.
+- Ranked players can press **Leave Ladder** to give up their spot -
+  everyone below moves up a place (not allowed mid-challenge).
 
 ### Commands
 

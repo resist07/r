@@ -72,16 +72,25 @@ def build_ladder_embed(data: dict, guild: discord.Guild | None) -> discord.Embed
             f"(or **#{core.LADDER_SIZE}** if you're unranked). Win and you take "
             f"their spot. Lose as challenger and you're on a "
             f"{core.COOLDOWN_DAYS}-day cooldown.\n"
-            f"Challenges must be played within **{core.CHALLENGE_DAYS} days**."
+            f"Challenges must be played within **{core.CHALLENGE_DAYS} days**.\n\n"
+            "\N{UP-POINTING RED TRIANGLE} climbed \N{BULLET} "
+            "\N{SHIELD}\N{VARIATION SELECTOR-16} defended \N{BULLET} "
+            "\N{DOWN-POINTING RED TRIANGLE} dropped"
         ),
         color=discord.Color.gold(),
     )
     lad = data["ladder"]
+    symbols = {
+        "up": "\N{UP-POINTING RED TRIANGLE} ",
+        "down": "\N{DOWN-POINTING RED TRIANGLE} ",
+        "defended": "\N{SHIELD}\N{VARIATION SELECTOR-16} ",
+    }
     if lad:
         lines = []
         for i, uid in enumerate(lad, 1):
             rating = data["players"].get(str(uid), {}).get("rating", core.STARTING_ELO)
-            lines.append(f"**#{i}** {display_name(guild, uid)} - {rating} Elo")
+            sym = symbols.get(data["ladder_status"].get(str(uid)), "")
+            lines.append(f"**#{i}** {sym}{display_name(guild, uid)} - {rating} Elo")
         embed.add_field(name="Rankings", value="\n".join(lines))
     else:
         embed.add_field(name="Rankings", value="Not set yet. A ref runs /set_top10.")
@@ -203,9 +212,12 @@ async def finalize_match(interaction: discord.Interaction, active: dict,
             challenge["status"] = "done"
             challenge["match_id"] = match["id"]
             if pending["winner"] == challenge["challenger"]:
+                old_ladder = list(data["ladder"])
                 core.ladder_apply_win(data, challenge["challenger"],
                                       challenge["challenged"])
+                core.update_movement(data, old_ladder)
             else:
+                core.mark_defended(data, challenge["challenged"])
                 core.start_cooldown(data, challenge["challenger"])
         data["active_matches"].pop(str(thread.id), None)
         core.save_data(data)
@@ -502,3 +514,27 @@ class LadderPanelView(discord.ui.View):
             f"<@{uid}> has challenged <@{target}> ({rank})! They have "
             f"{core.CHALLENGE_DAYS} days to play it out."
         )
+
+    @discord.ui.button(label="Leave Ladder", style=discord.ButtonStyle.secondary,
+                       custom_id="elo:ladder_leave")
+    async def leave(self, interaction: discord.Interaction, _):
+        uid = interaction.user.id
+        with core.lock:
+            data = core.load_data()
+            if uid not in data["ladder"]:
+                await interaction.response.send_message(
+                    "You're not on the ladder.", ephemeral=True)
+                return
+            if core.active_challenge_for(data, uid):
+                await interaction.response.send_message(
+                    "Finish (or have a ref void) your active challenge before "
+                    "leaving the ladder.", ephemeral=True)
+                return
+            rank = data["ladder"].index(uid) + 1
+            core.ladder_leave(data, uid)
+            core.save_data(data)
+        await interaction.response.edit_message(
+            embed=build_ladder_embed(data, interaction.guild))
+        await interaction.followup.send(
+            f"{interaction.user.mention} left the ladder, giving up **#{rank}** - "
+            "everyone below moves up a spot.")

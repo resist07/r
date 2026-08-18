@@ -49,6 +49,7 @@ def load_data() -> dict:
     data.setdefault("challenges", [])
     data.setdefault("next_challenge_id", 1)
     data.setdefault("ladder", [])           # list of user ids, rank 1 first
+    data.setdefault("ladder_status", {})    # user_id(str) -> "up"|"down"|"defended"
     data.setdefault("cooldowns", {})        # user_id(str) -> iso until
     data.setdefault("config", {})
     return data
@@ -250,6 +251,36 @@ def ladder_apply_win(data: dict, winner_id: int, loser_id: int) -> None:
         lad.remove(winner_id)
     lad.insert(pos, winner_id)
     del lad[LADDER_SIZE:]
+
+
+def update_movement(data: dict, old_ladder: list[int]) -> None:
+    """Refresh the up/down markers by comparing the ladder to a snapshot
+    taken before the change. Entries for players no longer ranked are dropped."""
+    status = data["ladder_status"]
+    new_ladder = data["ladder"]
+    for uid in new_ladder:
+        if uid not in old_ladder or new_ladder.index(uid) < old_ladder.index(uid):
+            status[str(uid)] = "up"
+        elif new_ladder.index(uid) > old_ladder.index(uid):
+            status[str(uid)] = "down"
+    for key in list(status):
+        if int(key) not in new_ladder:
+            del status[key]
+
+
+def mark_defended(data: dict, user_id: int) -> None:
+    if user_id in data["ladder"]:
+        data["ladder_status"][str(user_id)] = "defended"
+
+
+def ladder_leave(data: dict, user_id: int) -> bool:
+    """Voluntarily leave the ladder; everyone below shifts up a place."""
+    if user_id not in data["ladder"]:
+        return False
+    old = list(data["ladder"])
+    data["ladder"].remove(user_id)
+    update_movement(data, old)
+    return True
 
 
 def challenge_target(data: dict, user_id: int):
