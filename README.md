@@ -55,6 +55,14 @@ to enter the rankings (e.g. after a tournament). The panel has one
 - Ranked players can press **Leave Ladder** to give up their spot -
   everyone below moves up a place (not allowed mid-challenge).
 
+### Match log channel
+
+A ref runs `/setup_logs` in a dedicated channel. The bot then posts every
+completed match there (queue, ladder, and ref entries) with the score and
+both players' Elo changes, plus void notices - and keeps a pinned-style
+**live leaderboard embed** at the top that auto-updates after every match
+and every decay pass.
+
 ### Commands
 
 | Command | Who | What it does |
@@ -64,6 +72,7 @@ to enter the rankings (e.g. after a tournament). The panel has one
 | `/history [user]` | anyone | Last 10 matches (queue, ladder, and ref entries) |
 | `/setup_queue` | ref | Post the queue panel in the current channel |
 | `/setup_ladder` | ref | Post the ladder panel in the current channel |
+| `/setup_logs` | ref | Turn the current channel into the match-log channel |
 | `/set_top10 p1..p10` | ref | Set the ladder rankings, rank 1 first |
 | `/refmatch winner loser ws ls` | ref | Manually enter a result (e.g. tournament games) - affects Elo |
 | `/void match_id` | ref | Void a completed match and reverse its Elo |

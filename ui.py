@@ -115,6 +115,52 @@ def build_result_embed(data: dict, guild: discord.Guild | None, match: dict) -> 
     return embed
 
 
+def build_log_leaderboard_embed(data: dict, guild: discord.Guild | None,
+                                limit: int = 20) -> discord.Embed:
+    standings = sorted(data["players"].items(),
+                       key=lambda kv: kv[1]["rating"], reverse=True)
+    lines = [
+        f"`#{rank:>3}` **{display_name(guild, int(uid))}** - {p['rating']} "
+        f"({p['wins']}W-{p['losses']}L)"
+        for rank, (uid, p) in enumerate(standings[:limit], 1)
+    ]
+    embed = discord.Embed(
+        title="Leaderboard",
+        description="\n".join(lines) if lines else "No players yet.",
+        color=discord.Color.blurple(),
+    )
+    if len(standings) > limit:
+        embed.set_footer(text=f"Top {limit} of {len(standings)} - "
+                              "use /leaderboard for the full list.")
+    embed.timestamp = core.now()
+    return embed
+
+
+async def log_match(client: discord.Client, data: dict,
+                    guild: discord.Guild | None, match: dict,
+                    note: str | None = None) -> None:
+    """Post a match result to the log channel and refresh its leaderboard."""
+    channel = client.get_channel(data["config"].get("log_channel_id") or 0)
+    if not channel:
+        return
+    try:
+        await channel.send(content=note, embed=build_result_embed(data, guild, match))
+    except discord.HTTPException:
+        return
+    await refresh_log_leaderboard(client, data)
+
+
+async def refresh_log_leaderboard(client: discord.Client, data: dict) -> None:
+    channel_id = data["config"].get("log_channel_id")
+    message_id = data["config"].get("log_lb_message_id")
+    if not channel_id or not message_id:
+        return
+    channel = client.get_channel(channel_id)
+    if channel:
+        await safe_edit_message(channel, message_id,
+                                embed=build_log_leaderboard_embed(data, channel.guild))
+
+
 async def refresh_queue_panel(client: discord.Client, data: dict) -> None:
     channel_id = data["config"].get("queue_channel_id")
     message_id = data["config"].get("queue_message_id")
@@ -227,8 +273,9 @@ async def finalize_match(interaction: discord.Interaction, active: dict,
     await thread.send(embed=result)
 
     parent = thread.parent
-    if parent:
+    if parent and parent.id != data["config"].get("log_channel_id"):
         await parent.send(embed=result)
+    await log_match(interaction.client, data, guild, match)
     if challenge:
         await refresh_ladder_panel(interaction.client, data)
         if pending["winner"] == challenge["challenger"] and parent:

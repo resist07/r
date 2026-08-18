@@ -89,6 +89,23 @@ async def setup_ladder(interaction: discord.Interaction):
         core.save_data(data)
 
 
+@tree.command(name="setup_logs",
+              description="Log every match result + a live leaderboard in this channel (ref)")
+async def setup_logs(interaction: discord.Interaction):
+    data = core.load_data()
+    if not ref_check(interaction, data):
+        await interaction.response.send_message("Refs only.", ephemeral=True)
+        return
+    await interaction.response.send_message(
+        embed=ui.build_log_leaderboard_embed(data, interaction.guild))
+    message = await interaction.original_response()
+    with core.lock:
+        data = core.load_data()
+        data["config"]["log_channel_id"] = interaction.channel.id
+        data["config"]["log_lb_message_id"] = message.id
+        core.save_data(data)
+
+
 @tree.command(name="set_ref_role", description="Set which role counts as ref/mod (admin)")
 async def set_ref_role(interaction: discord.Interaction, role: discord.Role):
     if not interaction.user.guild_permissions.manage_guild:
@@ -273,6 +290,8 @@ async def refmatch(interaction: discord.Interaction,
         content=f"Entered by {interaction.user.mention}:",
         embed=ui.build_result_embed(data, interaction.guild, match))
     await ui.refresh_ladder_panel(client, data)
+    await ui.log_match(client, data, interaction.guild, match,
+                       note=f"Ref entry by {interaction.user.mention}:")
 
 
 @tree.command(name="void", description="Void a completed match and undo its Elo (ref)")
@@ -297,6 +316,13 @@ async def void(interaction: discord.Interaction, match_id: int):
         f"Match #{match_id} voided - Elo changes reversed. "
         "(Ladder positions are not auto-reverted; use /set_top10 if needed.)")
     await ui.refresh_ladder_panel(client, data)
+    log_channel = client.get_channel(data["config"].get("log_channel_id") or 0)
+    if log_channel:
+        await log_channel.send(
+            f"Match #{match_id} was voided by {interaction.user.mention} - "
+            "its Elo changes were reversed.",
+            allowed_mentions=discord.AllowedMentions.none())
+        await ui.refresh_log_leaderboard(client, data)
 
 
 @tree.command(name="extend", description="Extend the current ladder challenge's deadline (ref)")
@@ -340,6 +366,9 @@ async def maintenance_loop():
                 changed = True
         if changed:
             core.save_data(data)
+
+    if changed:
+        await ui.refresh_log_leaderboard(client, data)
 
     for c in expired:
         thread = client.get_channel(c["thread_id"]) if c["thread_id"] else None
