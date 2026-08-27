@@ -25,7 +25,12 @@ top-10 challenge ladder.
 A ref runs `/setup_queue` in the queue channel. The bot posts a panel with
 **Join Queue** / **Leave Queue** buttons:
 
-- Join the queue and the bot announces you're waiting for an opponent.
+- The queue is **anonymous**: the panel shows only how many players are
+  waiting - who you're facing is a mystery until you get matched.
+- The queue channel stays clean (just the panel). All queue activity goes
+  to a separate public channel set with `/setup_queue_logs`: anonymous
+  "someone joined/left the queue" notices, and match-start announcements
+  where the two names are finally revealed.
 - As soon as a second player joins, the bot creates a **private match
   thread** visible only to the two players and the refs.
 - The panel is **sticky**: the bot re-posts it so it's always the most
@@ -80,6 +85,7 @@ Void notices go to the matching history channel.
 | `/setup_ladder` | ref | Post the ladder panel in the current channel |
 | `/setup_elo_lb` | ref | Live Elo leaderboard in the current channel |
 | `/setup_queue_history` | ref | Log queue/ref match results in the current channel |
+| `/setup_queue_logs` | ref | Public queue-activity feed (anonymous joins/leaves, match starts) in the current channel |
 | `/setup_ladder_history` | ref | Log ladder match results in the current channel |
 | `/set_top10 p1..p10` | ref | Set the ladder rankings, rank 1 first |
 | `/refmatch winner loser ws ls` | ref | Manually enter a result (e.g. tournament games) - affects Elo |

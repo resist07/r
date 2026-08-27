@@ -70,16 +70,17 @@ def build_queue_embed(data: dict, guild: discord.Guild | None) -> discord.Embed:
             "are in, a **private match thread** (players + refs only) is "
             "created.\n\n"
             f"Games are first to **{core.WIN_SCORE}**, no draws. "
-            "Report **1-0** for a forfeit."
+            "Report **1-0** for a forfeit.\n\n"
+            "Who's waiting is a mystery - you find out when you get matched."
         ),
         color=discord.Color.blurple(),
     )
-    queue = data["queue"]
-    if queue:
-        lines = [f"{i}. {display_name(guild, uid)}" for i, uid in enumerate(queue, 1)]
-        embed.add_field(name=f"Waiting ({len(queue)})", value="\n".join(lines))
-    else:
-        embed.add_field(name="Waiting (0)", value="Nobody in queue.")
+    count = len(data["queue"])
+    embed.add_field(
+        name="Queue",
+        value=f"**{count}** player{'s' if count != 1 else ''} waiting"
+        if count else "Empty - be the first to join!",
+    )
     return embed
 
 
@@ -199,6 +200,19 @@ async def refresh_lb_channel(client: discord.Client, data: dict) -> None:
                                 embed=build_lb_embed(data, channel.guild))
 
 
+async def queue_log(client: discord.Client, text: str) -> None:
+    """Public queue-activity feed: anonymous joins/leaves, match starts."""
+    with core.lock:
+        data = core.load_data()
+    channel = client.get_channel(data["config"].get("queue_log_channel_id") or 0)
+    if channel:
+        try:
+            await channel.send(text,
+                               allowed_mentions=discord.AllowedMentions.none())
+        except discord.HTTPException:
+            pass
+
+
 def history_channel(client: discord.Client, data: dict, mtype: str):
     key = "ladder_history_channel_id" if mtype == "ladder" \
         else "queue_history_channel_id"
@@ -310,7 +324,7 @@ async def finalize_match(interaction: discord.Interaction, active: dict,
     await thread.send(embed=result)
 
     parent = thread.parent
-    if parent:
+    if parent and active["type"] == "ladder":
         await parent.send(embed=result)
     await log_match(interaction.client, data, guild, match)
     if challenge and pending["winner"] == challenge["challenger"] and parent:
@@ -502,17 +516,29 @@ class QueuePanelView(discord.ui.View):
                 del data["queue"][:2]
             core.save_data(data)
 
-        await interaction.response.defer()
-        channel = interaction.channel
         if pair:
-            thread = await start_match_thread(channel, pair[0], pair[1], "queue")
-            await channel.send(
-                f"Match found: <@{pair[0]}> vs <@{pair[1]}> - your private "
-                f"match thread is ready: {thread.mention}")
+            await interaction.response.send_message(
+                "Opponent found! Check your new private match thread.",
+                ephemeral=True)
         else:
-            await channel.send(
-                f"{interaction.user.mention} joined the queue and is waiting "
-                "for an opponent - press **Join Queue** to face them!")
+            await interaction.response.send_message(
+                "You're in the queue! You'll be pinged in a private thread "
+                "when an opponent shows up.", ephemeral=True)
+        guild = interaction.guild
+        if pair:
+            thread = await start_match_thread(
+                interaction.channel, pair[0], pair[1], "queue")
+            await queue_log(
+                interaction.client,
+                f"\N{CROSSED SWORDS} Match started: "
+                f"**{display_name(guild, pair[0])}** vs "
+                f"**{display_name(guild, pair[1])}** - queue's open again!")
+        else:
+            await queue_log(
+                interaction.client,
+                "\N{BELL} Someone joined the queue and is waiting for an "
+                "opponent - press **Join Queue** to face them. Who is it? "
+                "Mystery.")
         await repost_panel(interaction.client, "queue")
 
     @discord.ui.button(label="Leave Queue", style=discord.ButtonStyle.secondary,
@@ -527,8 +553,9 @@ class QueuePanelView(discord.ui.View):
                 return
             data["queue"].remove(uid)
             core.save_data(data)
-        await interaction.response.defer()
-        await interaction.channel.send(f"{interaction.user.mention} left the queue.")
+        await interaction.response.send_message(
+            "You left the queue.", ephemeral=True)
+        await queue_log(interaction.client, "Someone left the queue.")
         await repost_panel(interaction.client, "queue")
 
 

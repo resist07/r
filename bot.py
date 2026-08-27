@@ -133,6 +133,22 @@ async def setup_queue_history(interaction: discord.Interaction):
         "This channel now logs every queue match result (ref entries included).")
 
 
+@tree.command(name="setup_queue_logs",
+              description="Show live queue activity (anonymous joins/leaves, match starts) in this channel (ref)")
+async def setup_queue_logs(interaction: discord.Interaction):
+    data = core.load_data()
+    if not ref_check(interaction, data):
+        await interaction.response.send_message("Refs only.", ephemeral=True)
+        return
+    with core.lock:
+        data = core.load_data()
+        data["config"]["queue_log_channel_id"] = interaction.channel.id
+        core.save_data(data)
+    await interaction.response.send_message(
+        "This channel now shows live queue activity: anonymous joins and "
+        "leaves, and match announcements (names revealed once matched).")
+
+
 @tree.command(name="setup_ladder_history",
               description="Log all ladder match results in this channel (ref)")
 async def setup_ladder_history(interaction: discord.Interaction):
