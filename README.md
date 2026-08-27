@@ -26,8 +26,10 @@ A ref runs `/setup_queue` in the queue channel. The bot posts a panel with
 **Join Queue** / **Leave Queue** buttons:
 
 - Join the queue and the bot announces you're waiting for an opponent.
-- As soon as a second player joins, the bot creates a **match thread** with
-  both players.
+- As soon as a second player joins, the bot creates a **private match
+  thread** visible only to the two players and the refs.
+- The panel is **sticky**: the bot re-posts it so it's always the most
+  recent message in the channel (same for the ladder panel).
 - In the thread, either player presses **Submit score** (your score +
   opponent's score); the opponent presses **Confirm** to lock it in, or
   **Dispute** to cancel the report and ping the refs.
@@ -55,13 +57,17 @@ to enter the rankings (e.g. after a tournament). The panel has one
 - Ranked players can press **Leave Ladder** to give up their spot -
   everyone below moves up a place (not allowed mid-challenge).
 
-### Match log channel
+### Leaderboard + history channels
 
-A ref runs `/setup_logs` in a dedicated channel. The bot then posts every
-completed match there (queue, ladder, and ref entries) with the score and
-both players' Elo changes, plus void notices - and keeps a pinned-style
-**live leaderboard embed** at the top that auto-updates after every match
-and every decay pass.
+Three dedicated channels, each set up by a ref running one command in it:
+
+- `/setup_elo_lb` - the bot posts a **live Elo leaderboard embed** that
+  auto-updates after every match, void, and decay pass.
+- `/setup_queue_history` - every queue match result (and ref-entered
+  tournament game) is logged here with the score and both Elo changes.
+- `/setup_ladder_history` - every ladder match result is logged here.
+
+Void notices go to the matching history channel.
 
 ### Commands
 
@@ -72,7 +78,9 @@ and every decay pass.
 | `/history [user]` | anyone | Last 10 matches (queue, ladder, and ref entries) |
 | `/setup_queue` | ref | Post the queue panel in the current channel |
 | `/setup_ladder` | ref | Post the ladder panel in the current channel |
-| `/setup_logs` | ref | Turn the current channel into the match-log channel |
+| `/setup_elo_lb` | ref | Live Elo leaderboard in the current channel |
+| `/setup_queue_history` | ref | Log queue/ref match results in the current channel |
+| `/setup_ladder_history` | ref | Log ladder match results in the current channel |
 | `/set_top10 p1..p10` | ref | Set the ladder rankings, rank 1 first |
 | `/refmatch winner loser ws ls` | ref | Manually enter a result (e.g. tournament games) - affects Elo |
 | `/void match_id` | ref | Void a completed match and reverse its Elo |
@@ -80,7 +88,9 @@ and every decay pass.
 | `/set_ref_role role` | admin | Set the ref/mod role |
 
 **Who counts as a ref:** anyone with Manage Server permission, the role set
-via `/set_ref_role`, or a role literally named ref/refs/referee/mod/mods.
+via `/set_ref_role`, or a role literally named **Ref Administrator** /
+ref / refs / referee / mod / mods (case-insensitive). Refs are added to
+every private match thread automatically.
 
 ### Setup
 

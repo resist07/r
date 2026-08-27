@@ -22,7 +22,7 @@ LADDER_SIZE = 10        # the challenge ladder is a top 10
 CHALLENGE_DAYS = 3      # days to play out a ladder challenge
 COOLDOWN_DAYS = 3       # challenge cooldown after losing as challenger
 
-REF_ROLE_NAMES = {"ref", "refs", "referee", "mod", "mods"}
+REF_ROLE_NAMES = {"ref", "refs", "referee", "mod", "mods", "ref administrator"}
 
 DATA_FILE = Path(__file__).parent / "elo_data.json"
 

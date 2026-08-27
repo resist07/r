@@ -51,6 +51,18 @@ async def on_ready():
     print(f"Logged in as {client.user}")
 
 
+@client.event
+async def on_message(message: discord.Message):
+    # keep the queue/ladder panels sticky at the bottom of their channels
+    if message.author.bot or message.guild is None:
+        return
+    config = core.load_data()["config"]
+    if message.channel.id == config.get("queue_channel_id"):
+        await ui.repost_panel(client, "queue")
+    elif message.channel.id == config.get("ladder_channel_id"):
+        await ui.repost_panel(client, "ladder")
+
+
 # ---------------------------------------------------------------- setup cmds
 
 @tree.command(name="setup_queue", description="Post the 1v1 queue panel in this channel (ref)")
@@ -89,21 +101,51 @@ async def setup_ladder(interaction: discord.Interaction):
         core.save_data(data)
 
 
-@tree.command(name="setup_logs",
-              description="Log every match result + a live leaderboard in this channel (ref)")
-async def setup_logs(interaction: discord.Interaction):
+@tree.command(name="setup_elo_lb",
+              description="Show the auto-updating Elo leaderboard in this channel (ref)")
+async def setup_elo_lb(interaction: discord.Interaction):
     data = core.load_data()
     if not ref_check(interaction, data):
         await interaction.response.send_message("Refs only.", ephemeral=True)
         return
     await interaction.response.send_message(
-        embed=ui.build_log_leaderboard_embed(data, interaction.guild))
+        embed=ui.build_lb_embed(data, interaction.guild))
     message = await interaction.original_response()
     with core.lock:
         data = core.load_data()
-        data["config"]["log_channel_id"] = interaction.channel.id
-        data["config"]["log_lb_message_id"] = message.id
+        data["config"]["lb_channel_id"] = interaction.channel.id
+        data["config"]["lb_message_id"] = message.id
         core.save_data(data)
+
+
+@tree.command(name="setup_queue_history",
+              description="Log all queue (and ref-entered) match results in this channel (ref)")
+async def setup_queue_history(interaction: discord.Interaction):
+    data = core.load_data()
+    if not ref_check(interaction, data):
+        await interaction.response.send_message("Refs only.", ephemeral=True)
+        return
+    with core.lock:
+        data = core.load_data()
+        data["config"]["queue_history_channel_id"] = interaction.channel.id
+        core.save_data(data)
+    await interaction.response.send_message(
+        "This channel now logs every queue match result (ref entries included).")
+
+
+@tree.command(name="setup_ladder_history",
+              description="Log all ladder match results in this channel (ref)")
+async def setup_ladder_history(interaction: discord.Interaction):
+    data = core.load_data()
+    if not ref_check(interaction, data):
+        await interaction.response.send_message("Refs only.", ephemeral=True)
+        return
+    with core.lock:
+        data = core.load_data()
+        data["config"]["ladder_history_channel_id"] = interaction.channel.id
+        core.save_data(data)
+    await interaction.response.send_message(
+        "This channel now logs every ladder match result.")
 
 
 @tree.command(name="set_ref_role", description="Set which role counts as ref/mod (admin)")
@@ -150,7 +192,7 @@ async def set_top10(interaction: discord.Interaction,
             core.get_player(data, m.id)
         core.save_data(data)
     await interaction.response.send_message("Ladder updated.")
-    await ui.refresh_ladder_panel(client, data)
+    await ui.repost_panel(client, "ladder")
 
 
 # ---------------------------------------------------------------- stats cmds
@@ -289,9 +331,9 @@ async def refmatch(interaction: discord.Interaction,
     await interaction.response.send_message(
         content=f"Entered by {interaction.user.mention}:",
         embed=ui.build_result_embed(data, interaction.guild, match))
-    await ui.refresh_ladder_panel(client, data)
     await ui.log_match(client, data, interaction.guild, match,
                        note=f"Ref entry by {interaction.user.mention}:")
+    await ui.repost_panel(client, "ladder")
 
 
 @tree.command(name="void", description="Void a completed match and undo its Elo (ref)")
@@ -315,14 +357,14 @@ async def void(interaction: discord.Interaction, match_id: int):
     await interaction.response.send_message(
         f"Match #{match_id} voided - Elo changes reversed. "
         "(Ladder positions are not auto-reverted; use /set_top10 if needed.)")
-    await ui.refresh_ladder_panel(client, data)
-    log_channel = client.get_channel(data["config"].get("log_channel_id") or 0)
-    if log_channel:
-        await log_channel.send(
+    history = ui.history_channel(client, data, match["type"])
+    if history:
+        await history.send(
             f"Match #{match_id} was voided by {interaction.user.mention} - "
             "its Elo changes were reversed.",
             allowed_mentions=discord.AllowedMentions.none())
-        await ui.refresh_log_leaderboard(client, data)
+    await ui.refresh_lb_channel(client, data)
+    await ui.repost_panel(client, "ladder")
 
 
 @tree.command(name="extend", description="Extend the current ladder challenge's deadline (ref)")
@@ -368,7 +410,7 @@ async def maintenance_loop():
             core.save_data(data)
 
     if changed:
-        await ui.refresh_log_leaderboard(client, data)
+        await ui.refresh_lb_channel(client, data)
 
     for c in expired:
         thread = client.get_channel(c["thread_id"]) if c["thread_id"] else None

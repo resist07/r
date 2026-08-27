@@ -3,6 +3,10 @@
 All views are persistent (fixed custom_ids, timeout=None) so buttons keep
 working after the bot restarts. Per-match state lives in the data file keyed
 by thread id, never on the view objects themselves.
+
+The queue and ladder panels are "sticky": whenever something is posted in
+their channel they are deleted and re-sent so they stay the most recent
+message.
 """
 
 from datetime import datetime, timedelta
@@ -22,6 +26,20 @@ def is_ref(member: discord.Member, data: dict) -> bool:
         role.id == ref_role_id or role.name.lower() in core.REF_ROLE_NAMES
         for role in member.roles
     )
+
+
+def find_ref_role(guild: discord.Guild | None, data: dict) -> discord.Role | None:
+    if guild is None:
+        return None
+    ref_role_id = data["config"].get("ref_role_id")
+    if ref_role_id:
+        role = guild.get_role(ref_role_id)
+        if role:
+            return role
+    for role in guild.roles:
+        if role.name.lower() in core.REF_ROLE_NAMES:
+            return role
+    return None
 
 
 def display_name(guild: discord.Guild | None, user_id: int) -> str:
@@ -49,7 +67,8 @@ def build_queue_embed(data: dict, guild: discord.Guild | None) -> discord.Embed:
         title="1v1 Queue",
         description=(
             "Press **Join Queue** to look for a match. As soon as two players "
-            "are in, a match thread is created.\n\n"
+            "are in, a **private match thread** (players + refs only) is "
+            "created.\n\n"
             f"Games are first to **{core.WIN_SCORE}**, no draws. "
             "Report **1-0** for a forfeit."
         ),
@@ -115,8 +134,8 @@ def build_result_embed(data: dict, guild: discord.Guild | None, match: dict) -> 
     return embed
 
 
-def build_log_leaderboard_embed(data: dict, guild: discord.Guild | None,
-                                limit: int = 20) -> discord.Embed:
+def build_lb_embed(data: dict, guild: discord.Guild | None,
+                   limit: int = 20) -> discord.Embed:
     standings = sorted(data["players"].items(),
                        key=lambda kv: kv[1]["rating"], reverse=True)
     lines = [
@@ -125,7 +144,7 @@ def build_log_leaderboard_embed(data: dict, guild: discord.Guild | None,
         for rank, (uid, p) in enumerate(standings[:limit], 1)
     ]
     embed = discord.Embed(
-        title="Leaderboard",
+        title="Elo Leaderboard",
         description="\n".join(lines) if lines else "No players yet.",
         color=discord.Color.blurple(),
     )
@@ -136,74 +155,82 @@ def build_log_leaderboard_embed(data: dict, guild: discord.Guild | None,
     return embed
 
 
+# ---------------------------------------------------------------- panels/log
+
+async def repost_panel(client: discord.Client, kind: str) -> None:
+    """Delete and re-send a panel so it's the newest message in its channel.
+
+    kind is "queue" or "ladder".
+    """
+    with core.lock:
+        data = core.load_data()
+    channel = client.get_channel(data["config"].get(f"{kind}_channel_id") or 0)
+    if not channel:
+        return
+    old_id = data["config"].get(f"{kind}_message_id")
+    if kind == "queue":
+        embed, view = build_queue_embed(data, channel.guild), QueuePanelView()
+    else:
+        embed, view = build_ladder_embed(data, channel.guild), LadderPanelView()
+    try:
+        message = await channel.send(embed=embed, view=view)
+    except discord.HTTPException:
+        return
+    with core.lock:
+        data = core.load_data()
+        data["config"][f"{kind}_message_id"] = message.id
+        core.save_data(data)
+    if old_id and old_id != message.id:
+        try:
+            old = await channel.fetch_message(old_id)
+            await old.delete()
+        except discord.HTTPException:
+            pass
+
+
+async def refresh_lb_channel(client: discord.Client, data: dict) -> None:
+    channel_id = data["config"].get("lb_channel_id")
+    message_id = data["config"].get("lb_message_id")
+    if not channel_id or not message_id:
+        return
+    channel = client.get_channel(channel_id)
+    if channel:
+        await safe_edit_message(channel, message_id,
+                                embed=build_lb_embed(data, channel.guild))
+
+
+def history_channel(client: discord.Client, data: dict, mtype: str):
+    key = "ladder_history_channel_id" if mtype == "ladder" \
+        else "queue_history_channel_id"
+    return client.get_channel(data["config"].get(key) or 0)
+
+
 async def log_match(client: discord.Client, data: dict,
                     guild: discord.Guild | None, match: dict,
                     note: str | None = None) -> None:
-    """Post a match result to the log channel and refresh its leaderboard."""
-    channel = client.get_channel(data["config"].get("log_channel_id") or 0)
-    if not channel:
-        return
-    try:
-        await channel.send(content=note, embed=build_result_embed(data, guild, match))
-    except discord.HTTPException:
-        return
-    await refresh_log_leaderboard(client, data)
-
-
-async def refresh_log_leaderboard(client: discord.Client, data: dict) -> None:
-    channel_id = data["config"].get("log_channel_id")
-    message_id = data["config"].get("log_lb_message_id")
-    if not channel_id or not message_id:
-        return
-    channel = client.get_channel(channel_id)
+    """Post a match result to the right history channel + refresh the Elo LB."""
+    channel = history_channel(client, data, match["type"])
     if channel:
-        await safe_edit_message(channel, message_id,
-                                embed=build_log_leaderboard_embed(data, channel.guild))
-
-
-async def refresh_queue_panel(client: discord.Client, data: dict) -> None:
-    channel_id = data["config"].get("queue_channel_id")
-    message_id = data["config"].get("queue_message_id")
-    if not channel_id or not message_id:
-        return
-    channel = client.get_channel(channel_id)
-    if channel:
-        await safe_edit_message(channel, message_id,
-                                embed=build_queue_embed(data, channel.guild))
-
-
-async def refresh_ladder_panel(client: discord.Client, data: dict) -> None:
-    channel_id = data["config"].get("ladder_channel_id")
-    message_id = data["config"].get("ladder_message_id")
-    if not channel_id or not message_id:
-        return
-    channel = client.get_channel(channel_id)
-    if channel:
-        await safe_edit_message(channel, message_id,
-                                embed=build_ladder_embed(data, channel.guild))
+        try:
+            await channel.send(content=note,
+                               embed=build_result_embed(data, guild, match))
+        except discord.HTTPException:
+            pass
+    await refresh_lb_channel(client, data)
 
 
 # ---------------------------------------------------------------- match flow
 
 async def start_match_thread(channel: discord.TextChannel, p1: int, p2: int,
                              mtype: str, challenge: dict | None = None) -> discord.Thread:
-    """Create the match thread, store active-match state, post the panel."""
+    """Create a private match thread (players + refs), store state, post panel."""
     guild = channel.guild
     name1, name2 = display_name(guild, p1), display_name(guild, p2)
-    private = mtype == "ladder"
     thread = await channel.create_thread(
-        name=f"{'ladder' if private else 'match'}-{name1}-vs-{name2}"[:100],
-        type=discord.ChannelType.private_thread if private
-        else discord.ChannelType.public_thread,
+        name=f"{'ladder' if mtype == 'ladder' else 'match'}-{name1}-vs-{name2}"[:100],
+        type=discord.ChannelType.private_thread,
         invitable=False,
     )
-    for uid in (p1, p2):
-        member = guild.get_member(uid)
-        if member:
-            try:
-                await thread.add_user(member)
-            except discord.HTTPException:
-                pass
 
     with core.lock:
         data = core.load_data()
@@ -215,6 +242,16 @@ async def start_match_thread(channel: discord.TextChannel, p1: int, p2: int,
         }
         core.save_data(data)
 
+    members = [m for uid in (p1, p2) if (m := guild.get_member(uid))]
+    ref_role = find_ref_role(guild, data)
+    if ref_role:
+        members += [m for m in ref_role.members if not m.bot][:25]
+    for member in members:
+        try:
+            await thread.add_user(member)
+        except discord.HTTPException:
+            pass
+
     embed = discord.Embed(
         title=f"{name1} vs {name2}",
         description=(
@@ -223,7 +260,7 @@ async def start_match_thread(channel: discord.TextChannel, p1: int, p2: int,
             "opponent confirms.\n"
             "Forfeit? Report the score as **1-0** (the FF'd player loses extra Elo)."
         ),
-        color=discord.Color.gold() if private else discord.Color.blurple(),
+        color=discord.Color.gold() if mtype == "ladder" else discord.Color.blurple(),
     )
     if challenge:
         deadline = int(datetime.fromisoformat(challenge["deadline"]).timestamp())
@@ -273,20 +310,19 @@ async def finalize_match(interaction: discord.Interaction, active: dict,
     await thread.send(embed=result)
 
     parent = thread.parent
-    if parent and parent.id != data["config"].get("log_channel_id"):
+    if parent:
         await parent.send(embed=result)
     await log_match(interaction.client, data, guild, match)
-    if challenge:
-        await refresh_ladder_panel(interaction.client, data)
-        if pending["winner"] == challenge["challenger"] and parent:
-            lad = data["ladder"]
-            rank = lad.index(challenge["challenger"]) + 1 \
-                if challenge["challenger"] in lad else None
-            if rank:
-                await parent.send(
-                    f"<@{challenge['challenger']}> climbs to **#{rank}**!",
-                    allowed_mentions=discord.AllowedMentions.none(),
-                )
+    if challenge and pending["winner"] == challenge["challenger"] and parent:
+        lad = data["ladder"]
+        if challenge["challenger"] in lad:
+            rank = lad.index(challenge["challenger"]) + 1
+            await parent.send(
+                f"<@{challenge['challenger']}> climbs to **#{rank}**!",
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
+    await repost_panel(interaction.client,
+                       "ladder" if active["type"] == "ladder" else "queue")
     try:
         await thread.edit(archived=True, locked=True)
     except discord.HTTPException:
@@ -466,19 +502,18 @@ class QueuePanelView(discord.ui.View):
                 del data["queue"][:2]
             core.save_data(data)
 
-        await interaction.response.edit_message(
-            embed=build_queue_embed(data, interaction.guild))
-
+        await interaction.response.defer()
+        channel = interaction.channel
         if pair:
-            thread = await start_match_thread(
-                interaction.channel, pair[0], pair[1], "queue")
-            await interaction.followup.send(
-                f"Match found: <@{pair[0]}> vs <@{pair[1]}> - head to "
-                f"{thread.mention}!")
+            thread = await start_match_thread(channel, pair[0], pair[1], "queue")
+            await channel.send(
+                f"Match found: <@{pair[0]}> vs <@{pair[1]}> - your private "
+                f"match thread is ready: {thread.mention}")
         else:
-            await interaction.followup.send(
+            await channel.send(
                 f"{interaction.user.mention} joined the queue and is waiting "
                 "for an opponent - press **Join Queue** to face them!")
+        await repost_panel(interaction.client, "queue")
 
     @discord.ui.button(label="Leave Queue", style=discord.ButtonStyle.secondary,
                        custom_id="elo:queue_leave")
@@ -492,10 +527,9 @@ class QueuePanelView(discord.ui.View):
                 return
             data["queue"].remove(uid)
             core.save_data(data)
-        await interaction.response.edit_message(
-            embed=build_queue_embed(data, interaction.guild))
-        await interaction.followup.send(
-            f"{interaction.user.mention} left the queue.")
+        await interaction.response.defer()
+        await interaction.channel.send(f"{interaction.user.mention} left the queue.")
+        await repost_panel(interaction.client, "queue")
 
 
 # ---------------------------------------------------------------- ladder panel
@@ -557,10 +591,11 @@ class LadderPanelView(discord.ui.View):
 
         lad = data["ladder"]
         rank = f"#{lad.index(target) + 1}" if target in lad else "?"
-        await interaction.followup.send(
+        await interaction.channel.send(
             f"<@{uid}> has challenged <@{target}> ({rank})! They have "
             f"{core.CHALLENGE_DAYS} days to play it out."
         )
+        await repost_panel(interaction.client, "ladder")
 
     @discord.ui.button(label="Leave Ladder", style=discord.ButtonStyle.secondary,
                        custom_id="elo:ladder_leave")
@@ -580,8 +615,8 @@ class LadderPanelView(discord.ui.View):
             rank = data["ladder"].index(uid) + 1
             core.ladder_leave(data, uid)
             core.save_data(data)
-        await interaction.response.edit_message(
-            embed=build_ladder_embed(data, interaction.guild))
-        await interaction.followup.send(
+        await interaction.response.defer()
+        await interaction.channel.send(
             f"{interaction.user.mention} left the ladder, giving up **#{rank}** - "
             "everyone below moves up a spot.")
+        await repost_panel(interaction.client, "ladder")
